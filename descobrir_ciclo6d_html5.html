@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alma de Servo - Levantamento de Dons</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; color: #2c3e50; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .quiz-container { background-color: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 35px; max-width: 650px; width: 100%; }
+        .progress-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; font-size: 0.9rem; color: #7f8c8d; }
+        .progress-bar { height: 8px; background-color: #e2e8f0; border-radius: 4px; width: 75%; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: #2c3e50; width: 0%; transition: width 0.3s ease; }
+        .question { font-size: 1.25rem; margin-bottom: 25px; font-weight: 600; line-height: 1.5; color: #1a252f; }
+        .options { display: flex; flex-direction: column; gap: 12px; }
+        .option-btn { background-color: #fff; border: 2px solid #cbd5e1; border-radius: 8px; padding: 14px 20px; font-size: 1rem; text-align: left; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; }
+        .option-btn:hover { background-color: #f0f7ff; border-color: #2c3e50; color: #2c3e50; }
+        .option-badge { background-color: #e2e8f0; border-radius: 4px; padding: 2px 8px; margin-right: 12px; font-weight: bold; font-size: 0.85rem; display: inline-block; min-width: 15px; text-align: center; }
+        .option-btn:hover .option-badge { background-color: #2c3e50; color: white; }
+        .result-screen { display: none; text-align: center; }
+        .skills-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; text-align: left; }
+        .skill-card { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 6px solid #27ae60; padding: 16px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+        .skill-rank { font-size: 1.5rem; font-weight: bold; color: #27ae60; margin-right: 15px; }
+        .skill-info { display: flex; align-items: center; }
+        .skill-name { font-weight: bold; font-size: 1.1rem; color: #2c3e50; }
+        .skill-points { font-size: 1.2rem; color: #27ae60; font-weight: 700; background: #e8f8f0; padding: 4px 14px; border-radius: 20px; }
+            .option-btn:focus-visible { outline: 3px solid #3498db; outline-offset: 2px; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .quiz-container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="quiz-screen">
+        <div class="progress-container">
+            <span id="progress-text">Pergunta 1 de 80</span>
+            <div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
+        </div>
+        <div id="question-text" class="questions">Carregando questionário...</div>
+        <div id="options-container" class="options"></div>
+    </div>
+
+    <div id="result-screen" class="result-screen">
+        <h2>Levantamento Concluído!</h2>
+        <p>Suas respostas foram processadas com sucesso.</p>
+        <h3 style="margin-top: 30px; color: #2c3e50;">Seus 3 Dons Principais (Maior Pontuação):</h3>
+        <div id="skills-breakdown" class="skills-grid"></div>
+        <button id="restart-btn" class="option-btn" type="button" style="margin-top:25px; justify-content:center;">Refazer levantamento</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { id: 1, text: "Sei fazer planos e organizar ideias, recursos, tempo e pessoas, de modo que elas trabalhem com prazer.", skill: "Administração" },
+        { id: 2, text: "Sinto que devo levar o levar o evangelho a lugares onde nunca foi pregado, mesmo que seja em outro país ou grupo social.", skill: "Apostolado" },
+        { id: 3, text: "Posso entender, pela direção do Espírito Santo, qual é a vontade de Deus para situações específicas, sempre de acordo com as escrituras.", skill: "Conhecimento" },
+        { id: 4, text: "Consigo reconhecer e distinguir claramente entre a influência de Deus, de Satanás, do mundo ou da carne em uma determinada situação ou pessoa.", skill: "Discernimento" },
+        { id: 5, text: "As pessoas consideram que sou um bom ouvinte, me procuram quando têm problemas ou estão desanimadas e dizem que foram mais longe devido a alguma palavra que ministrei a elas.", skill: "Encorajamento" },
+        { id: 6, text: "Tenho habilidade para compartilhar conhecimento das Escrituras com os membros do Corpo que ajudarão a edificá-los em Cristo e servirão para o crescimento e saúde da igreja.", skill: "Ensino" },
+        { id: 7, text: "Tenho habilidade para compartilhar o evangelho com outros, levá-los a uma decisão por Cristo e a se moverem in direção ao discipulado.", skill: "Evangelismo" },
+        { id: 8, text: "Diante de situações que parece impossível haver uma solução, tenho plena segurança que tudo pode mudar, pelo poder de Deus.", skill: "Fé" },
+        { id: 9, text: "Gosto de oferecer uma recepção calorosa para as pessoas, fornecendo comida, abrigo ou comunhão, de modo a se sentirem confortáveis e em casa.", skill: "Hospitalidade" },
+        { id: 10, text: "Sou rápido em identificar quando um grupo do qual faço parte não está chegando a lugar nenhum e consigo traçar estratégias, assumir responsabilidades, influenciar e guiar pessoas para o que aquele grupo pode alcançar no futuro.", skill: "Liderança" },
+        { id: 11, text: "Posso assumir a realização de tarefas simples e rotineiras da igreja ou ministérios, para que seus líderes e voluntários fiquem livres para se dedicarem às “atividades principais” realizando assim, mais e melhor.", skill: "Serviço" },
+        { id: 12, text: "Sinto em mim mesmo os sofrimentos físicos, emocionais, financeiros ou espirituais de outras pessoas e traduzo essa compaixão em ações que refletem o amor de Cristo e aliviam o sofrimento delas.", skill: "Misericórdia" },
+        { id: 13, text: "Gosto de proteger, guiar, aconselhar e nutrir pessoas nos princípios bíblicos, incentivando o crescimento na fé e confrontando de forma amorosa o pecado, se for preciso.", skill: "Pastorado" },
+        { id: 14, text: "Sinto que Deus me usa pra convencer as pessoas do pecado em suas vidas, da necessidade de arrependimento e para alertar das consequências de não se arrependerem.", skill: "Profecia" },
+        { id: 15, text: "Considero um privilégio contribuir para um projeto que necessita de recursos, mesmo que isso me custe algum sacrifício pessoal.", skill: "Contribuição" },
+        { id: 16, text: "Sei relacionar e aplicar os princípios bíblicos nas diversas situações da vida diária, orientando a tomada de decisões adequada diante de muitas opções, evitando decisões tolas e erradas.", skill: "Sabedoria" },
+        { id: 17, text: "Consigo delegar e designar trabalhos importantes para outras pessoas e sei como acompanhar os resultados.", skill: "Administração" },
+        { id: 18, text: "Quando chego num ambiente onde a cultura e a origem das pessoas são diferentes da minha, consigo me adaptar facilmente.", skill: "Apostolado" },
+        { id: 19, text: "Tenho grande desejo de estudar e conhecer a Palavra de Deus, e sinto prazer em compartilhar meu entendimento ou levar uma palavra de sabedoria para uma pessoa ou grupo.", skill: "Conhecimento" },
+        { id: 20, text: "Consigo perceber se uma pessoa está sendo sincera e honesta, mesmo sem conhece-la muito bem.", skill: "Discernimento" },
+        { id: 21, text: "Sou capacitado para levar conforto, conselhos e incentivar a coragem em pessoas que precisam de ajuda, dando impulso a que tomem atitudes.", skill: "Encorajamento" },
+        { id: 22, text: "Consigo entender os princípios bíblicos e comunica-los de uma forma que seja facilmente compreendida e aplicada, seja verbalmente, visualmente ou pelo exemplo.", skill: "Ensino" },
+        { id: 23, text: "Busco sempre oportunidades para conversar com pessoas desconhecidas e sou capaz de conduzir essas conversas para assuntos espirituais e assim comunicar as boas novas de Jesus.", skill: "Evangelismo" },
+        { id: 24, text: "Procuro agir e reagir sempre confiando nas promessas de Deus, crendo firmemente que Ele é capaz de cumprir seus propósitos.", skill: "Fé" },
+        { id: 25, text: "Fico confortável em contato com pessoas estranhas e me preocupo profundamente se elas se sentem bem-vindas no ambiente da igreja ou em minha casa.", skill: "Hospitalidade" },
+        { id: 26, text: "Ao participar de novos grupos as pessoas costumam esperar que eu assuma a liderança e quando aceitei essa responsabilidade já obtive sucesso em ajudar o grupo a atingir a meta.", skill: "Liderança" },
+        { id: 27, text: "Percebo as tarefas que precisam ser feitas nos bastidores e as faço de boa vontade e com alegria, não importa se são grandes ou pequenas; cheia de detalhes ou simples; dinâmicas ou monótonas.", skill: "Serviço" },
+        { id: 28, text: "Sinto-me muito incomodado quando vejo uma pessoa ferindo emocionalmente outra pessoa e geralmente reajo em defesa dela.", skill: "Misericórdia" },
+        { id: 29, text: "Posso investir tempo no desenvolvimento espiritual das pessoas, em qualquer estágio da vida cristã que estejam – novos crentes, crentes comuns ou líderes – fazendo isso por um longo tempo.", skill: "Pastorado" },
+        { id: 30, text: "Sou sensível à direção do Espírito nas diversas situações, seja para lembrar as pessoas sobre as maravilhosas promessas de Deus ou para falar sobre o juízo e julgamento divino.", skill: "Profecia" },
+        { id: 31, text: "Sou capaz de descobrir novas formas de gerar dinheiro e acho fácil pedir a outras pessoas que contribuam com dinheiro, tempo, habilidades ou bens materiais para uma necessidade específica.", skill: "Contribuição" },
+		{ id: 32, text: "Enquanto outros não sabem o que fazer, consigo apresentar soluções práticas para problemas difíceis, situações específicas ou confusas.", skill: "Sabedoria" },
+		{ id: 33, text: "Sei desenvolver estratégias e identificar os recursos humanos e materiais necessários para coloca-las em prática.", skill: "Administração" },
+		{ id: 34, text: "Tenho facilidade de me relacionar com pessoas que tem hábitos, crenças e culturas diferentes da minha.", skill: "Apostolado" },
+		{ id: 35, text: "Consigo ver os vários lados de uma situação, apontar consequências, enxergar os detalhes, saber que certas coisas são verdadeiras.", skill: "Conhecimento" },
+		{ id: 36, text: "Consigo dizer se aquilo que está sendo ensinado por alguém está de acordo com as escrituras.", skill: "Discernimento" },
+		{ id: 37, text: "Consigo ajudar pessoas a obterem uma perspectiva emocional e espiritual positiva em qualquer situação de suas vidas.", skill: "Encorajamento" },
+		{ id: 38, text: "Gosto de falar sobre a vida de Jesus, dar explicações, responder perguntas das pessoas e ajuda-las a compreender as verdades da Bíblia e como aplicá-las na vida aqui e agora.", skill: "Ensino" },
+		{ id: 39, text: "Tenho preocupação com todo tipo de pessoas perdidas e faço todo possível para compartilhar o evangelho de forma clara e eficaz com elas, sem temer a rejeição delas.", skill: "Evangelismo" },
+		{ id: 40, text: "Quando sinto que Deus está por trás de uma ideia ou projeto, sou capaz de apoiá-lo, mesmo que outros estejam duvidando ou tropeçando.", skill: "Fé" },
+		{ id: 41, text: "Sinto-me realizado em receber pessoas e estou mais interessado em que se sintam à vontade do que manter a minha casa em ordem.", skill: "Hospitalidade" },
+		{ id: 42, text: "Consigo ter uma visão clara do futuro preferido, assim como dos próximos passos que são necessários para alcançar aquela visão.", skill: "Liderança" },
+		{ id: 43, text: "Estou sempre disposto e prefiro trabalhar como auxiliar ou assistente de um líder, ao invés de assumir uma posição de liderança – me contento em receber ordens e não dar ordens.", skill: "Serviço" },
+		{ id: 44, text: "Acho muito difícil não ajudar as pessoas com menos posses materiais que eu, e muitas vezes me pego visitando e fazendo algo por suas necessidades.", skill: "Misericórdia" },
+		{ id: 45, text: "Tenho preferência para ministrar às pessoas individualmente ou em pequenos grupos, onde possa acompanha-las bem de perto, nas diversas áreas de suas vidas, ouvindo suas histórias e dando orientações bíblicas.", skill: "Pastorado" },
+		{ id: 46, text: "Deus me usa para aplicar sua Palavra com autoridade e expor situações de pecado, para que atitudes e pensamentos sejam corrigidos, afim de que vidas e relações sejam restauradas.", skill: "Profecia" },
+		{ id: 47, text: "Compartilho meus recursos materiais, além do dízimo, com liberalidade e alegria e sem pensar em retorno, pois tenho consciência de que tudo o que possuo pertence a Deus.", skill: "Contribuição" },
+		{ id: 48, text: "Tenho informações sobre uma pessoa ou situação que vão além da sabedoria humana, que não conheci ou discerni por meios naturais.", skill: "Sabedoria" },
+		{ id: 49, text: "Sou hábil para colocar em prática ações eficazes e eficientes que irão alcançar as metas de um grupo ou organização.", skill: "Administração" },
+		{ id: 50, text: "A ideia de iniciar um novo empreendimento desperta meu interesse.", skill: "Apostolado" },
+		{ id: 51, text: "Conheço fatos sobre determinadas situações, sobre a condição de outra pessoa ou tenho entendimento de um princípio espiritual, que não obtive por meios naturais.", skill: "Conhecimento" },
+		{ id: 52, text: "Tenho a Capacidade divina de perceber, antes que outros percebam, o que está por trás do que uma pessoa fala ou apresenta - se é verdadeiro ou não.", skill: "Discernimento" },
+		{ id: 53, text: "Posso motivar naturalmente outros a perseverarem a luta contra as tentações e pecados, nos tempos difíceis ou em seus ministérios pessoais.", skill: "Encorajamento" },
+		{ id: 54, text: "Estudo constantemente a Palavra de Deus, procurando encontrar o significado de passagens e palavras específicas, tentando entender o contexto histórico, os eventos, os lugares e as pessoas citadas.", skill: "Ensino" },
+		{ id: 55, text: "Passo um tempo considerável orando pela salvação daqueles que não conhecem Jesus Cristo.", skill: "Evangelismo" },
+		{ id: 56, text: "Minhas experiências pessoais com Deus me ajudam a descansar no Seu poder e por isso posso obedecê-lo, e se for preciso, assumir riscos e fazer sacrifícios pessoais, porquê confio totalmente Nele.", skill: "Fé" },
+		{ id: 57, text: "Sou usado por Deus para conectar pessoas umas com as outras, criando novos relacionamentos e oportunidades para transmitir o amor de Deus.", skill: "Hospitalidade" },
+		{ id: 58, text: "Consigo comunicar uma visão de forma que motive outras pessoas a se envolverem e a Capacidade divina de equipar os envolvidos para buscarmos a direção juntos.", skill: "Liderança" },
+		{ id: 59, text: "Tenho alegria especial quando vejo que ao ajudar alguém, fiz parte das realizações do ministério pessoal dela.", skill: "Serviço" },
+		{ id: 60, text: "Sou sensível e consigo perceber rapidamente quando alguém não está bem, sou bom ouvinte e sinto necessidade de simplesmente 'estar perto'.", skill: "Misericórdia" },
+		{ id: 61, text: "Sou pacificador, ponderado e tolerante quando as pessoas erram e procuro proteger aqueles que estão sob meus cuidados para que nada interrompa o processo de amadurecimento na fé.", skill: "Pastorado" },
+		{ id: 62, text: "Me incomodo com o peso da condição pecaminosa do mundo ao meu redor e sinto a responsabilidade de falar publicamente, não para condenação, mas para que a verdade de Deus seja revelada, mesmo que isso leve as pessoas a se afastarem de mim.", skill: "Profecia" },
+		{ id: 63, text: "Organizo minhas finanças e tenho um estilo de vida simples para sempre poder contribuir para uma família, um indivíduo ou um ministério que precise de ajuda material, oferecendo sempre o mais e melhor que posso.", skill: "Contribuição" },
+		{ id: 64, text: "Reconheço com clareza onde uma decisão ou ação no presente podem levar e posso alertar sobre possíveis prejuízos e consequências negativas.", skill: "Sabedoria" },
+		{ id: 65, text: "Consigo planejar detalhadamente um evento, antever o que pode dar errado e já desenvolver alternativas e soluções.", skill: "Administração" },
+		{ id: 66, text: "Sou capacitado trabalhar na implantação de novos ministérios e dar assistência aos já existentes.", skill: "Apostolado" },
+		{ id: 67, text: "Nos meus estudos pessoais da bíblia, frequentemente descubro verdades importantes, e sou compelido a compartilhar com outras pessoas aquilo que descobri.", skill: "Conhecimento" },
+		{ id: 68, text: "As pessoas confiam em meu discernimento e clareza sobre os fatos, as pessoas e acontecimentos da vida cotidiana.", skill: "Discernimento" },
+		{ id: 69, text: "Posso me colocar ao lado daqueles que estão iniciando um novo projeto ou vivendo um momento novo em suas vidas, sendo apoio e incentivando-os a darem o melhor de si, a acreditarem e a terem fé na ajuda constante de Deus.", skill: "Encorajamento" },
+		{ id: 70, text: "Me preocupo em saber se a Palavra de Deus está sendo ensinada ou interpretada com a exatidão e se as pessoas estão mudando suas vidas como resultado desse ensino.", skill: "Ensino" },
+		{ id: 71, text: "Sinto-me feliz e realizado falando de Cristo aos não-crentes.", skill: "Evangelismo" },
+		{ id: 72, text: "Estou certo da fidelidade e cuidado de Deus para com seu povo e de que Ele fará mais do que podemos pensar ou imaginar e posso agir com base nisso, inspirando outras pessoas.", skill: "Fé" },
+		{ id: 73, text: "Gosto de criar ambientes agradáveis e confortáveis para as pessoas, onde se sintam seguras e cuidadas.", skill: "Hospitalidade" },
+		{ id: 74, text: "Tenho grande paixão em reunir, organizar e capacitar pessoas com dons espirituais e Capacidade divinas diversas para trabalharem juntas e em harmonia, afim de alcançarem uma meta para a glória de Deus e serviço aos outros.", skill: "Liderança" },
+		{ id: 75, text: "Amo a igreja e ajudo onde é necessário, agindo rapidamente ao ver uma tarefa prática ou física a ser feita, que as vezes é esquecida ou outros não querem assumi-la.", skill: "Serviço" },
+		{ id: 76, text: "Desejo trazer alívio às necessidades imediatas de quem está sofrendo e se for preciso, mobilizo outras pessoas para me ajudarem a fazer algo prático.", skill: "Misericórdia" },
+		{ id: 77, text: "Desejo ir além de apenas ensinar ou liderar um grupo, mas ministrar e orientar nas necessidades diárias dos meus alunos e para isso, estabeleço relações de segurança e confiança.", skill: "Pastorado" },
+		{ id: 78, text: "Percebo rapidamente quando concessões nocivas aos princípios bíblicos estão sendo feitas (dentro ou fora da igreja) e reajo fortemente, porquê considero a Escritura como a única fonte da verdade.", skill: "Profecia" },
+		{ id: 79, text: "Quando sei de uma necessidade material, meu desejo é encontrar uma forma de atende-la rapidamente - penso em como posso resolver ou em como posso ajudar a resolver.", skill: "Contribuição" },
+		{ id: 80, text: "Sou procurado por pessoas que estão confusas ou precisando tomar decisões e minhas percepções e conselhos muitas vezes causam mudanças positivas na direção que estavam indo.", skill: "Sabedoria" }];
+		
+		const scaleOptions = [
+			{ label: "Sempre", value: 4 },
+			{ label: "Frequentemente / Na maioria das vezes", value: 3 },
+			{ label: "Às Vezes", value: 2 },
+			{ label: "Raramente", value: 1 },
+			{ label: "Nunca", value: 0 }];
+			
+			let currentQuestionIndex = 0;
+			let scoresBySkill = {};
+			questions.forEach(q => { if (!scoresBySkill[q.skill]) scoresBySkill[q.skill] = 0; });
+            let scormActive = false;
+            function initSCORM() { return false; }
+					
+			function loadQuestion() {
+    if (currentQuestionIndex >= questions.length) {
+        finishQuiz();
+        return;
+    }
+    
+    const currentQuestion = questions[currentQuestionIndex];
+    
+    // Corrigido: Adicionadas as crases para permitir o uso de \${}
+    document.getElementById("progress-text").innerText = `Afirmação ${currentQuestionIndex + 1} de ${questions.length}`;
+    
+    // Corrigido: Adicionadas as crases envolvendo o cálculo e o símbolo de %
+    document.getElementById("progress").style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+    
+    // Corrigido: Adicionadas as crases para juntar o ID da pergunta com o texto
+    document.getElementById("question-text").innerText = `${currentQuestion.id}. ${currentQuestion.text}`;
+    
+    const container = document.getElementById("options-container");
+    container.innerHTML = "";
+    
+    scaleOptions.forEach(opt => {
+        const button = document.createElement("button");
+        button.className = "option-btn";
+        button.type = "button";
+        
+        // Corrigido: Adicionadas as crases para injetar a tag HTML e as variáveis corretamente
+        button.innerHTML = `<span class="option-badge">${opt.value}</span> ${opt.label}`;
+        
+        button.onclick = () => handleAnswer(currentQuestion.skill, opt.value);
+        container.appendChild(button);
+    });
+    
+    window.scrollTo(0,0);
+}
+
+			
+			function handleAnswer(skill, val) {
+				scoresBySkill[skill] += val;
+				currentQuestionIndex++;
+				loadQuestion();
+			}//final handleAnswer
+			
+			function finishQuiz() {
+    document.getElementById("quiz-screen").style.display = "none";
+    document.getElementById("result-screen").style.display = "block";
+    
+    // Cria a string completa de log com TODOS os dons para os administradores no EadSimples
+    let reportString = "Levantamento Completo de Dons: ";
+    for (const s in scoresBySkill) {
+        // Corrigido: Adicionadas as crases para estruturar o texto do log
+        reportString += `[${s}: ${scoresBySkill[s]} pts] `;
+    }
+    
+    // Corrigido: Linha isolada corretamente (separada do comentário anterior)
+    let sortedSkills = [];
+    for (const skill in scoresBySkill) {
+        sortedSkills.push({ name: skill, points: scoresBySkill[skill] });
+    }
+    
+    // Ordena do maior para o menor
+    sortedSkills.sort((a, b) => b.points - a.points);
+    
+    // Pega estritamente os 3 principais dons para renderizar na tela do estudante
+    const topThree = sortedSkills.slice(0, 3);
+    const breakdownContainer = document.getElementById("skills-breakdown");
+    
+    topThree.forEach((skill, index) => {
+        const card = document.createElement("div");
+        card.className = "skill-card"; 
+        
+        // Corrigido: Adicionadas as crases envolvendo todo o bloco de HTML multilinha
+        card.innerHTML = `
+            <div class="skill-info"> 
+                <span class="skill-rank">${index + 1}º</span> 
+                <span class="skill-name">${skill.name}</span> 
+            </div> 
+            <div class="skill-points">${skill.points} / 20</div>
+        `;
+        breakdownContainer.appendChild(card);
+    });
+    
+    // HTML5 puro: guarda o resultado localmente no navegador.
+    try {
+        const totalScore = Object.values(scoresBySkill).reduce((a, b) => a + b, 0);
+        localStorage.setItem("alma-de-servo-resultado", JSON.stringify({
+            completedAt: new Date().toISOString(),
+            scores: scoresBySkill,
+            totalScore: totalScore,
+            report: reportString
+        }));
+    } catch (e) {
+        console.warn("Não foi possível salvar o resultado localmente.", e);
+    }
+}
+
+document.getElementById("restart-btn").onclick = function() {
+    currentQuestionIndex = 0;
+    Object.keys(scoresBySkill).forEach(skill => { scoresBySkill[skill] = 0; });
+    document.getElementById("skills-breakdown").innerHTML = "";
+    document.getElementById("result-screen").style.display = "none";
+    document.getElementById("quiz-screen").style.display = "block";
+    loadQuestion();
+};
+
+window.onload = function() {
+    loadQuestion();
+};
+
+</script>
+</body>
+</html>
